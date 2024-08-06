@@ -4,20 +4,16 @@ import Image from 'next/image';
 
 export default function Home() {
   const [gpuType, setGpuType] = useState<string>('');
-  const [tokenId, setTokenId] = useState<string>('');
-  const [tokenSecret, setTokenSecret] = useState<string>('');
   const [isDeployed, setIsDeployed] = useState<boolean>(false);
   const [backendUrl, setBackUrl] = useState<string>('');
   const [prompt, setPrompt] = useState<string>('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   const handleDeploy = async () => {
-    // call /api/deploy (post with json: {"token_id": "", "token_secret"})
     try {
       // Define the payload to be sent in the request
       const payload = {
-        modal_token_id: tokenId, // Replace with actual token_id if needed
-        modal_token_secret: tokenSecret, // Replace with actual token_secret if needed
+        access_token: "balbla"
       };
 
       // Make the POST request to /api/deploy
@@ -72,8 +68,7 @@ export default function Home() {
             console.error('Image generation failed:', statusData.message);
           } else {
             // Retry after a delay
-            console.log("polling")
-            setTimeout(checkStatus, 2000);
+            setTimeout(checkStatus, 3000);
           }
         };
         checkStatus();
@@ -91,7 +86,7 @@ export default function Home() {
       <div className="w-full mx-auto max-w-4xl">
         {/* Align horizontal center */}
         <div className="flex flex-col items-center w-full">
-          <div className="form-control w-full max-w-lg mb-4">
+          <div className="form-control w-full max-w-lg mb-10">
             <label className="label">
               <span className="label-text">GPU Type</span>
             </label>
@@ -104,33 +99,6 @@ export default function Home() {
               <option>A10G</option>
               <option>A100</option>
             </select>
-          </div>
-
-          <div className="form-control w-full max-w-lg mb-4">
-            <label className="label">
-              <span className="label-text">Token id</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Enter token id"
-              className="input input-bordered w-full max-w-lg"
-              value={tokenId}
-              onChange={(e) => setTokenId(e.target.value)}
-            />
-          </div>
-
-          <div className="form-control w-full max-w-lg mb-4">
-            <label className="label">
-              <span className="label-text">Token secret</span>
-            </label>
-
-            <input
-              type="text"
-              placeholder="Enter token secret"
-              className="input input-bordered w-full max-w-lg mb-4"
-              value={tokenSecret}
-              onChange={(e) => setTokenSecret(e.target.value)}
-            />
           </div>
 
           <button

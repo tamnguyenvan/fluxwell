@@ -24,7 +24,7 @@ def deploy():
     try:
         data = request.get_json()
         access_token = data.get("access_token")
-        result = subprocess.run(['modal', 'setup'], capture_output=True, text=True, check=True)
+        result = subprocess.run(['modal setup'], capture_output=True, text=True, check=True, shell=True)
         result = subprocess.run(["modal deploy main.py"], capture_output=True, text=True, check=True, shell=True)
 
         pattern = r"Created web function .* => (https://[^\s]+)"
