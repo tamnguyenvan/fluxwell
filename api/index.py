@@ -17,14 +17,72 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 images_dir = "./images"
 tasks = {}
 deployed_url = ""
+setup_tasks = {}
+
+
+def run_modal_setup(setup_task_id):
+    try:
+        # Start the process and capture output in real-time
+        process = subprocess.Popen(
+            ['python', '-m', 'modal', 'setup'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        https_link_pattern = re.compile(r'https://\S+')
+        link_found = None
+
+        for line in process.stdout:
+            if line:
+                # Check if line contains an HTTPS link
+                match = https_link_pattern.search(line)
+                if match:
+                    link_found = match.group(0)
+                    break
+        print('link found', link_found)
+
+        if link_found:
+            setup_tasks[setup_task_id] = {'status': 'completed', 'link': link_found}
+        else:
+            setup_tasks[setup_task_id] = {'status': 'failed', 'message': 'No HTTPS link found'}
+
+        print('setup', setup_tasks)
+        process.wait()
+
+    except Exception as e:
+        setup_tasks[setup_task_id] = {'status': 'failed', 'message': str(e)}
+
+
+@app.route("/api/setup", methods=["POST"])
+def setup():
+    data = request.get_json()
+    access_token = data.get("access_token")
+
+    # Generate a unique ID for this setup task
+    setup_task_id = str(uuid.uuid4())
+
+    # Initialize task status
+    setup_tasks[setup_task_id] = {'status': 'processing'}
+
+    # Start the thread for modal setup
+    thread = threading.Thread(target=run_modal_setup, args=(setup_task_id,))
+    thread.start()
+
+    return jsonify({"setup_id": setup_task_id})
+
+
+@app.route("/api/setup-status/<setup_task_id>", methods=["GET"])
+def status(setup_task_id):
+    print('sss', setup_tasks)
+    task = setup_tasks.get(setup_task_id)
+    if task is None:
+        return jsonify({"status": "error", "message": "Task not found"}), 404
+    return jsonify(task)
 
 
 @app.route("/api/deploy", methods=["POST"])
 def deploy():
     try:
-        data = request.get_json()
-        access_token = data.get("access_token")
-        result = subprocess.run(['python -m modal setup'], text=True, check=True, shell=True)
         result = subprocess.run(["python -m modal deploy main.py"], capture_output=True, text=True, check=True, shell=True)
 
         pattern = r"Created web function .* => (https://[^\s]+)"

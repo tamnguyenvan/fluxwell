@@ -9,6 +9,50 @@ export default function Home() {
   const [prompt, setPrompt] = useState<string>('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
+  const handleSetup = async () => {
+    try {
+      const payload = {
+        'access_token': 'blabla'
+      }
+
+      const response = await fetch('/api/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        const result = await response.json();
+        const setupId = result.setup_id;
+
+        // Polling here
+        while (true) {
+          const statusResponse = await fetch(`/api/setup-status/${setupId}`);
+          const statusData = await statusResponse.json();
+
+          if (statusData.status === 'completed') {
+            console.log('Setup completed! Link:', statusData.link);
+            window.open(statusData.link, '_blank');
+            break;
+          } else if (statusData.status === 'failed') {
+            console.error('Setup failed:', statusData.message);
+            break;
+          } else {
+            console.log('Setup is still pending...');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Poll every 5 seconds
+          }
+        }
+
+      } else {
+        console.log("Setup failed")
+      }
+    } catch (error) {
+
+    }
+  }
+
   const handleDeploy = async () => {
     try {
       // Define the payload to be sent in the request
@@ -100,6 +144,13 @@ export default function Home() {
               <option>A100</option>
             </select>
           </div>
+
+          <button
+            className="btn btn-primary mb-4 max-w-xs"
+            onClick={handleSetup}
+          >
+            Set up
+          </button>
 
           <button
             className="btn btn-primary mb-4 max-w-xs"
